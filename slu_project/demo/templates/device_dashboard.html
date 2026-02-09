@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>{{ device_id }} Dashboard</title>
+  <style>
+    .kpi { display:flex; gap:24px; margin:16px 0; }
+    .card { padding:12px 14px; border:1px solid #ddd; border-radius:10px; }
+    .grid { display:grid; grid-template-columns: repeat(8, 40px); gap:6px; }
+    .cell {
+      width:40px; height:40px; border-radius:8px; border:1px solid #ddd;
+      display:flex; align-items:center; justify-content:center;
+      font: 12px/1.2 Arial;
+    }
+  </style>
+</head>
+<body>
+  <h1>Device: {{ device_id }}</h1>
+  <p>Last update: {{ timestamp }}</p>
+
+  <div class="kpi">
+    <div class="card">
+      <div>Battery</div>
+      <h2>{{ battery }}%</h2>
+    </div>
+    <div class="card">
+      <div>Total Level</div>
+      <h2>{{ total_level|floatformat:2 }}%</h2>
+    </div>
+  </div>
+
+  <h3>Matrix Total (8×8)</h3>
+  <div class="grid">
+    {% for row in matrix_rows %}
+      {% for v in row %}
+        <div class="cell">{{ v }}</div>
+      {% endfor %}
+    {% endfor %}
+  </div>
+
+  <hr />
+  <h3>For your 3D visualization (JS data)</h3>
+  {{ matrix_total|json_script:"matrixTotalJson" }}
+
+  <script>
+    // This is the exact 64-value array you’ll use in your 3D renderer
+    const matrixTotal = JSON.parse(document.getElementById("matrixTotalJson").textContent);
+    console.log("matrixTotal length:", matrixTotal.length);
+  </script>
+</body>
+</html>

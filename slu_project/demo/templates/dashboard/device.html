@@ -1,0 +1,667 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ device_id }} - Analytics{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-50">
+  <!-- Header Bar -->
+  <div class="bg-white border-b border-slate-200 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <button onclick="window.history.back()" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+          <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+            </path>
+          </svg>
+        </button>
+        <div>
+          <h1 class="text-xl font-semibold text-slate-800">Real-Time Monitoring</h1>
+          <p class="text-sm text-slate-500">Monitor all baskets in real-time with live status updates</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-slate-600">Admin</span>
+          <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium text-sm">
+            SA
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Modal Card -->
+  <div class="max-w-7xl mx-auto p-6">
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+
+      <!-- Modal Header -->
+      <div
+        class="bg-gradient-to-r from-slate-50 to-slate-100 px-8 py-6 border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 bg-red-500 rounded-xl flex items-center justify-center shadow-lg">
+            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+              </path>
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold text-slate-900">{{ device_id }}</h2>
+            <p class="text-slate-600 text-sm">Basket Details & Analytics</p>
+          </div>
+        </div>
+        <button onclick="window.history.back()" class="text-slate-400 hover:text-slate-600 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Alert Banner -->
+      {% if total_level > 85 %}
+      <div class="bg-red-50 border-l-4 border-red-500 px-8 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
+            <span class="text-2xl font-bold text-red-600">{{ total_level|floatformat:0 }}%</span>
+          </div>
+          <div>
+            <div class="text-sm text-slate-600">Last Updated: {{ timestamp }}</div>
+            <div class="text-sm text-slate-500">Battery: {{ battery }}%</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 text-red-600 font-medium">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd"
+              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+              clip-rule="evenodd"></path>
+          </svg>
+          <span>Requires Immediate Collection</span>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Main Content Grid -->
+      <div class="p-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+          <!-- Left Column: 3D Visualization -->
+          <div>
+            <div class="flex items-center gap-2 mb-4">
+              <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+              </svg>
+              <h3 class="text-lg font-semibold text-slate-900">3D Fill Visualization</h3>
+            </div>
+
+            <div class="relative bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+              <!-- Current Fill Badge -->
+              <div class="absolute top-4 right-4 z-10 bg-white rounded-xl shadow-lg px-4 py-3 border border-slate-200">
+                <div class="text-xs text-slate-500 mb-1">Current Fill</div>
+                <div class="text-3xl font-bold text-red-600">{{ total_level|floatformat:0 }}%</div>
+              </div>
+
+              <!-- Y-axis scale -->
+              <div class="absolute left-2 top-8 bottom-8 flex flex-col justify-between text-xs text-slate-500 z-10">
+                <span>100%</span>
+                <span>75%</span>
+                <span>50%</span>
+                <span>25%</span>
+                <span>0%</span>
+              </div>
+
+              <!-- 3D Canvas -->
+              <div id="threeWrap" style="height: 420px;"></div>
+
+              <!-- Controls -->
+              <div class="absolute bottom-4 left-4 z-10 flex gap-2">
+                <button id="resetView"
+                  class="bg-white/95 backdrop-blur-sm hover:bg-white px-3 py-2 rounded-lg shadow-md border border-slate-200 text-xs font-medium text-slate-700 transition-all">
+                  Reset View
+                </button>
+                <button id="toggleWireframe"
+                  class="bg-white/95 backdrop-blur-sm hover:bg-white px-3 py-2 rounded-lg shadow-md border border-slate-200 text-xs font-medium text-slate-700 transition-all">
+                  Wireframe
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Analytics -->
+          <div class="space-y-6">
+
+            <!-- Today's Fill Level Trend -->
+            <div>
+              <div class="flex items-center gap-2 mb-4">
+                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
+                <h3 class="text-lg font-semibold text-slate-900">Today's Fill Level Trend</h3>
+              </div>
+              <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-6 border border-emerald-200">
+                <canvas id="trendChart" height="180"></canvas>
+              </div>
+            </div>
+
+            <!-- Weekly Fill Pattern -->
+            <div>
+              <div class="flex items-center gap-2 mb-4">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                  </path>
+                </svg>
+                <h3 class="text-lg font-semibold text-slate-900">Weekly Fill Pattern</h3>
+              </div>
+              <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+                <canvas id="weeklyChart" height="180"></canvas>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Basket Information Section -->
+        <div class="mt-8 pt-8 border-t border-slate-200">
+          <h3 class="text-lg font-semibold text-slate-900 mb-6">Basket Information</h3>
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <!-- Location -->
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+              </div>
+              <div>
+                <div class="text-xs text-slate-500 mb-1">Location</div>
+                <div class="font-semibold text-slate-900">University Campus</div>
+              </div>
+            </div>
+
+            <!-- Town/Area -->
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                  </path>
+                </svg>
+              </div>
+              <div>
+                <div class="text-xs text-slate-500 mb-1">Town/Area</div>
+                <div class="font-semibold text-slate-900">East End</div>
+              </div>
+            </div>
+
+            <!-- Assigned Route -->
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7">
+                  </path>
+                </svg>
+              </div>
+              <div>
+                <div class="text-xs text-slate-500 mb-1">Assigned Route</div>
+                <div class="font-semibold text-slate-900">RT-003</div>
+              </div>
+            </div>
+
+            <!-- Assigned Team -->
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                  </path>
+                </svg>
+              </div>
+              <div>
+                <div class="text-xs text-slate-500 mb-1">Assigned Team</div>
+                <div class="font-semibold text-slate-900">Team Gamma</div>
+              </div>
+            </div>
+
+            <!-- Battery Level -->
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z">
+                  </path>
+                </svg>
+              </div>
+              <div>
+                <div class="text-xs text-slate-500 mb-1">Battery Level</div>
+                <div class="font-semibold text-slate-900">{{ battery }}%</div>
+              </div>
+            </div>
+
+            <!-- Last Updated -->
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div>
+                <div class="text-xs text-slate-500 mb-1">Last Updated</div>
+                <div class="font-semibold text-slate-900">10 mins ago</div>
+              </div>
+            </div>
+
+            <!-- Basket Size -->
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
+              </div>
+              <div>
+                <div class="text-xs text-slate-500 mb-1">Basket Size</div>
+                <div class="font-semibold text-slate-900 capitalize">{{ basket_size_display|default:"medium" }}</div>
+              </div>
+            </div>
+
+            <!-- Status -->
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div>
+                <div class="text-xs text-slate-500 mb-1">Status</div>
+                <div
+                  class="font-semibold {% if total_level > 85 %}text-red-600{% elif total_level > 60 %}text-orange-600{% else %}text-green-600{% endif %}">
+                  {% if total_level > 85 %}Nearly Full{% elif total_level > 60 %}Filling{% else %}Normal{% endif %}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Analytics Cards -->
+        <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+
+          <!-- Avg Fill Rate -->
+          <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-5 border border-emerald-200">
+            <div class="text-sm font-medium text-emerald-700 mb-1">Avg Fill Rate</div>
+            <div class="text-3xl font-bold text-emerald-900">+12%<span class="text-lg">/hr</span></div>
+          </div>
+
+          <!-- Collections/Week -->
+          <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-200">
+            <div class="text-sm font-medium text-blue-700 mb-1">Collections/Week</div>
+            <div class="text-3xl font-bold text-blue-900">19</div>
+          </div>
+
+          <!-- Avg Fill Level -->
+          <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-5 border border-purple-200">
+            <div class="text-sm font-medium text-purple-700 mb-1">Avg Fill Level</div>
+            <div class="text-3xl font-bold text-purple-900">76%</div>
+          </div>
+
+          <!-- Time to Full -->
+          <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-200">
+            <div class="text-sm font-medium text-amber-700 mb-1">Time to Full</div>
+            <div class="text-3xl font-bold text-amber-900">~3.2<span class="text-lg">hrs</span></div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="bg-slate-50 px-8 py-6 border-t border-slate-200 flex items-center justify-end gap-4">
+        <button
+          class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all">
+          Assign to Route
+        </button>
+        <button
+          class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all">
+          Schedule Collection
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{{ matrix_total|json_script:"matrixTotalJson" }}
+{{ total_level|default:0|json_script:"totalLevelJson" }}
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script type="module">
+  const matrixTotal = JSON.parse(document.getElementById("matrixTotalJson").textContent);
+  const totalLevel = Number(
+    JSON.parse(document.getElementById("totalLevelJson").textContent || "0")
+  );
+  const values = matrixTotal.length === 64 ? matrixTotal : new Array(64).fill(totalLevel);
+
+  import * as THREE from "{% static 'vendor/three/build/three.module.js' %}";
+  import { OrbitControls } from "{% static 'vendor/three/examples/jsm/controls/OrbitControls.js' %}";
+  import { GLTFLoader } from "{% static 'vendor/three/examples/jsm/loaders/GLTFLoader.js' %}";
+
+  const wrap = document.getElementById("threeWrap");
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xf8fafc);
+
+  const w = wrap.clientWidth || 800;
+  const h = wrap.clientHeight || 420;
+  const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  wrap.appendChild(renderer.domElement);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  mainLight.position.set(5, 10, 5);
+  scene.add(mainLight);
+
+  window.addEventListener("resize", () => {
+    const r = wrap.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    camera.aspect = r.width / r.height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(r.width, r.height);
+  });
+
+  const grid = 8;
+  const FLIP_X = false;
+  const FLIP_Z = false;
+  const ROTATE_90_CW = false;
+
+  function idxFromRC(r, c) {
+    let rr = r, cc = c;
+    if (ROTATE_90_CW) {
+      const nr = c;
+      const nc = grid - 1 - r;
+      rr = nr; cc = nc;
+    }
+    if (FLIP_X) cc = grid - 1 - cc;
+    if (FLIP_Z) rr = grid - 1 - rr;
+    return rr * grid + cc;
+  }
+
+  function valueToColor(v) {
+    const clamped = Math.max(0, Math.min(100, v));
+    if (clamped < 30) return new THREE.Color(0x16a34a);
+    if (clamped < 70) return new THREE.Color(0xf59e0b);
+    return new THREE.Color(0xdc2626);
+  }
+
+  const loader = new GLTFLoader();
+  let fillMesh = null;
+  let wireframeHelper = null;
+
+  loader.load(
+    "{% static 'models/binV2.glb' %}",
+    (gltf) => {
+      const model = gltf.scene;
+      scene.add(model);
+
+      const sensorWall = model.getObjectByName("Wall_Left");
+      if (sensorWall) {
+        const mats = Array.isArray(sensorWall.material) ? sensorWall.material : [sensorWall.material];
+        mats.forEach((m) => {
+          m.transparent = true;
+          m.opacity = 0.15;
+          m.side = THREE.DoubleSide;
+          m.depthWrite = false;
+        });
+      }
+
+      const slope = model.getObjectByName("Bottom_Slope");
+      if (!slope) {
+        console.error("Bottom_Slope not found!");
+        return;
+      }
+
+      const basketBox = new THREE.Box3().setFromObject(model);
+      const basketSize = new THREE.Vector3();
+      const basketCenter = new THREE.Vector3();
+      basketBox.getSize(basketSize);
+      basketBox.getCenter(basketCenter);
+
+      const rimMargin = basketSize.y * 0.06;
+      const maxFillHeight = basketSize.y - rimMargin;
+
+      const slopeBox = new THREE.Box3().setFromObject(slope);
+      const slopeSize = new THREE.Vector3();
+      slopeBox.getSize(slopeSize);
+
+      const insetX = (slopeBox.max.x - slopeBox.min.x) * 0.08;
+      const insetZ = (slopeBox.max.z - slopeBox.min.z) * 0.08;
+
+      const minX = slopeBox.min.x + insetX;
+      const maxX = slopeBox.max.x - insetX;
+      const minZ = slopeBox.min.z + insetZ;
+      const maxZ = slopeBox.max.z - insetZ;
+
+      const stepX = (maxX - minX) / grid;
+      const stepZ = (maxZ - minZ) / grid;
+
+      const rows = grid + 1;
+      const cols = grid + 1;
+      const positions = [];
+      const colors = [];
+
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          const x = minX + j * stepX;
+          const z = minZ + i * stepZ;
+
+          const t = (z - minZ) / (maxZ - minZ || 1);
+          const baseY = slopeBox.min.y + t * slopeSize.y;
+
+          let fillPercent = 0;
+          let count = 0;
+
+          for (let di = 0; di <= 1; di++) {
+            for (let dj = 0; dj <= 1; dj++) {
+              const r = Math.min(grid - 1, Math.max(0, i - 1 + di));
+              const c = Math.min(grid - 1, Math.max(0, j - 1 + dj));
+              fillPercent += values[idxFromRC(r, c)];
+              count++;
+            }
+          }
+          fillPercent /= count;
+
+          let h = Math.max(0.05, (fillPercent / 100) * maxFillHeight);
+          const maxAllowed = (basketBox.max.y - rimMargin) - baseY;
+          h = Math.min(h, Math.max(0.05, maxAllowed));
+
+          positions.push(x, baseY + h, z);
+          const color = valueToColor(fillPercent);
+          colors.push(color.r, color.g, color.b);
+        }
+      }
+
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          const x = minX + j * stepX;
+          const z = minZ + i * stepZ;
+          const t = (z - minZ) / (maxZ - minZ || 1);
+          const baseY = slopeBox.min.y + t * slopeSize.y;
+
+          positions.push(x, baseY, z);
+          colors.push(0.4, 0.4, 0.4);
+        }
+      }
+
+      const indices = [];
+      const nTop = rows * cols;
+
+      for (let i = 0; i < grid; i++) {
+        for (let j = 0; j < grid; j++) {
+          const a = i * cols + j;
+          const b = a + 1;
+          const c = a + cols;
+          const d = c + 1;
+          indices.push(a, b, c, b, d, c);
+        }
+      }
+
+      for (let i = 0; i < grid; i++) {
+        for (let j = 0; j < grid; j++) {
+          const a = nTop + i * cols + j;
+          const b = a + 1;
+          const c = a + cols;
+          const d = c + 1;
+          indices.push(a, c, b, b, c, d);
+        }
+      }
+
+      for (let j = 0; j < grid; j++) {
+        const a = j, b = a + 1, ac = nTop + a, bc = nTop + b;
+        indices.push(a, b, bc, a, bc, ac);
+      }
+      for (let j = 0; j < grid; j++) {
+        const a = (rows - 1) * cols + j, b = a + 1, ac = nTop + a, bc = nTop + b;
+        indices.push(a, bc, b, a, ac, bc);
+      }
+      for (let i = 0; i < grid; i++) {
+        const a = i * cols, b = (i + 1) * cols, ac = nTop + a, bc = nTop + b;
+        indices.push(a, bc, b, a, ac, bc);
+      }
+      for (let i = 0; i < grid; i++) {
+        const a = i * cols + (cols - 1), b = (i + 1) * cols + (cols - 1);
+        const ac = nTop + a, bc = nTop + b;
+        indices.push(a, b, bc, a, bc, ac);
+      }
+
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+      geometry.setIndex(indices);
+      geometry.computeVertexNormals();
+
+      const material = new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        roughness: 0.6,
+        metalness: 0.1,
+        side: THREE.DoubleSide,
+      });
+
+      fillMesh = new THREE.Mesh(geometry, material);
+      scene.add(fillMesh);
+
+      controls.target.copy(basketCenter);
+      const diag = Math.sqrt(basketSize.x ** 2 + basketSize.y ** 2 + basketSize.z ** 2);
+      const dist = diag * 1.8;
+      const viewDir = new THREE.Vector3(0.6, 0.5, 0.7).normalize();
+      camera.position.copy(basketCenter).addScaledVector(viewDir, dist);
+      camera.fov = 40;
+      camera.updateProjectionMatrix();
+
+      controls.minDistance = diag * 0.8;
+      controls.maxDistance = diag * 3.5;
+      controls.update();
+      controls.saveState();
+
+      document.getElementById("resetView").addEventListener("click", () => {
+        controls.reset();
+      });
+
+      document.getElementById("toggleWireframe").addEventListener("click", () => {
+        if (!wireframeHelper) {
+          wireframeHelper = new THREE.WireframeGeometry(geometry);
+          const line = new THREE.LineSegments(wireframeHelper);
+          line.material.color.setHex(0x000000);
+          line.material.opacity = 0.3;
+          line.material.transparent = true;
+          fillMesh.add(line);
+        } else {
+          fillMesh.children.forEach(child => {
+            if (child.type === "LineSegments") fillMesh.remove(child);
+          });
+          wireframeHelper = null;
+        }
+      });
+    },
+    undefined,
+    (err) => console.error("Model load error:", err)
+  );
+
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // Charts
+  const trendCtx = document.getElementById('trendChart').getContext('2d');
+  new Chart(trendCtx, {
+    type: 'line',
+    data: {
+      labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+      datasets: [{
+        data: [25, 28, 35, 55, 75, totalLevel],
+
+
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        fill: true,
+        tension: 0.4,
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, max: 100, grid: { color: '#e0f2fe' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  const weeklyCtx = document.getElementById('weeklyChart').getContext('2d');
+  new Chart(weeklyCtx, {
+    type: 'line',
+    data: {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      datasets: [{
+        data: [95, 78, 85, 92, 88, 65],
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        fill: true,
+        tension: 0.4,
+        borderWidth: 3,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, max: 100, grid: { color: '#dbeafe' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+</script>
+
+{% endblock %}
