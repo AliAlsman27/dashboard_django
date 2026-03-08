@@ -10,6 +10,15 @@ def init_firebase():
     if _initialized:
         return
 
+    try:
+        # Check if already initialized by another module
+        firebase_admin.get_app()
+        _initialized = True
+        return
+    except ValueError:
+        # Not initialized yet, proceed
+        pass
+
     # 1. Try to get JSON content from environment variable
     json_creds = os.environ.get("FIREBASE_CREDENTIALS_JSON")
 
