@@ -1,0 +1,952 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Route Management - SLU Dashboard{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
+
+<style>
+    :root {
+        --indigo: #4f46e5;
+        --green: #10b981;
+        --amber: #f59e0b;
+        --red: #ef4444;
+        --s50: #f8fafc;
+        --s100: #f1f5f9;
+        --s200: #e2e8f0;
+        --s400: #94a3b8;
+        --s600: #475569;
+        --s800: #1e293b;
+    }
+
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+
+    .rm-page {
+        background: var(--s50);
+        padding: 1.75rem 2rem 3rem;
+        min-height: 100vh;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Header */
+    .page-hdr {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.75rem;
+    }
+
+    .page-hdr h1 {
+        font-size: 1.55rem;
+        font-weight: 800;
+        color: var(--s800);
+        letter-spacing: -0.4px;
+    }
+
+    .page-hdr p {
+        font-size: .85rem;
+        color: var(--s400);
+        margin-top: .2rem;
+    }
+
+    /* Buttons */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .55rem 1.05rem;
+        border-radius: .55rem;
+        font-size: .8rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all .18s;
+        font-family: inherit;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #4f46e5, #6366f1);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(79, 70, 229, .22);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(79, 70, 229, .32);
+    }
+
+    .btn-green {
+        background: linear-gradient(135deg, #059669, #10b981);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, .2);
+    }
+
+    .btn-green:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(16, 185, 129, .3);
+    }
+
+    .btn-outline {
+        background: #fff;
+        border: 1.5px solid var(--s200);
+        color: var(--s600);
+    }
+
+    .btn-outline:hover {
+        background: var(--s100);
+    }
+
+    .btn-xs {
+        font-size: .72rem !important;
+        padding: .3rem .65rem !important;
+        border-radius: .4rem !important;
+    }
+
+    /* Stats */
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 1.1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+        background: #fff;
+        border-radius: .85rem;
+        padding: 1.2rem 1.35rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 4px 12px rgba(0, 0, 0, .04);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        border: 1px solid var(--s100);
+    }
+
+    .stat-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: .6rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+
+    .stat-lbl {
+        font-size: .7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .55px;
+        color: var(--s400);
+    }
+
+    .stat-val {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--s800);
+        line-height: 1.1;
+        margin-top: .1rem;
+    }
+
+    /* Control row */
+    .ctrl-row {
+        display: flex;
+        align-items: center;
+        gap: .7rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.2rem;
+    }
+
+    .ctrl-row label {
+        font-size: .82rem;
+        font-weight: 600;
+        color: var(--s600);
+    }
+
+    .zone-sel {
+        padding: .52rem .95rem;
+        border-radius: .55rem;
+        border: 1.5px solid var(--s200);
+        background: #fff;
+        font-size: .82rem;
+        font-weight: 500;
+        color: var(--s800);
+        cursor: pointer;
+        min-width: 205px;
+        font-family: inherit;
+    }
+
+    /* Route badge */
+    .rt-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .28rem .7rem;
+        border-radius: 99px;
+        font-size: .73rem;
+        font-weight: 600;
+    }
+
+    .badge-osrm {
+        background: #ede9fe;
+        color: #5b21b6;
+    }
+
+    .badge-fb {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    /* Route info bar */
+    .rt-info {
+        display: none;
+        align-items: center;
+        gap: 1.2rem;
+        flex-wrap: wrap;
+        background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+        border: 1px solid #bae6fd;
+        border-radius: .7rem;
+        padding: .7rem 1.2rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .rt-info.show {
+        display: flex;
+    }
+
+    .ri-item {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        font-size: .82rem;
+        font-weight: 600;
+        color: #0369a1;
+    }
+
+    .ri-val {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0c4a6e;
+    }
+
+    /* Map section */
+    .map-sect {
+        background: #fff;
+        border-radius: 1rem;
+        border: 1px solid var(--s200);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, .05), 0 6px 20px rgba(0, 0, 0, .04);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .map-topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--s100);
+    }
+
+    .map-topbar h2 {
+        font-size: .98rem;
+        font-weight: 700;
+        color: var(--s800);
+    }
+
+    .map-topbar p {
+        font-size: .77rem;
+        color: var(--s400);
+        margin-top: .1rem;
+    }
+
+    .map-wrap {
+        position: relative;
+    }
+
+    #map {
+        height: 520px;
+        width: 100%;
+    }
+
+    /* Loading overlay */
+    .map-load {
+        display: none;
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, .85);
+        z-index: 1000;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: .6rem;
+        font-weight: 600;
+        color: var(--indigo);
+    }
+
+    .spinner {
+        width: 30px;
+        height: 30px;
+        border: 3px solid #e0e7ff;
+        border-top-color: var(--indigo);
+        border-radius: 50%;
+        animation: spin .7s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Legend */
+    .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .7rem;
+        align-items: center;
+        padding: .9rem 1.5rem 1rem;
+    }
+
+    .leg-item {
+        display: flex;
+        align-items: center;
+        gap: .3rem;
+        font-size: .74rem;
+        font-weight: 500;
+        color: var(--s600);
+    }
+
+    .leg-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .leg-line {
+        width: 22px;
+        height: 3px;
+        border-radius: 2px;
+        flex-shrink: 0;
+    }
+
+    /* Zone cards */
+    .zone-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+        gap: 1.1rem;
+    }
+
+    .z-card {
+        background: #fff;
+        border-radius: .85rem;
+        border: 1px solid var(--s200);
+        padding: 1.2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
+        transition: box-shadow .2s, transform .2s;
+        cursor: pointer;
+    }
+
+    .z-card:hover {
+        box-shadow: 0 4px 18px rgba(0, 0, 0, .1);
+        transform: translateY(-2px);
+    }
+
+    .z-card.active {
+        border-color: var(--indigo);
+        box-shadow: 0 0 0 3px #e0e7ff;
+    }
+
+    .zc-hdr {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        margin-bottom: .85rem;
+    }
+
+    .zc-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .zc-name {
+        font-size: .9rem;
+        font-weight: 700;
+        color: var(--s800);
+    }
+
+    .zc-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: .35rem;
+        margin-bottom: .85rem;
+    }
+
+    .zcs {
+        background: var(--s50);
+        border-radius: .4rem;
+        padding: .38rem .45rem;
+        text-align: center;
+    }
+
+    .zcs span {
+        font-size: .63rem;
+        font-weight: 700;
+        color: var(--s400);
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        display: block;
+    }
+
+    .zcs strong {
+        font-size: .95rem;
+        font-weight: 800;
+    }
+
+    .zc-bar {
+        height: 4px;
+        background: var(--s100);
+        border-radius: 99px;
+        overflow: hidden;
+        margin-bottom: .7rem;
+    }
+
+    .zc-fill {
+        height: 100%;
+        border-radius: 99px;
+        transition: width .6s;
+    }
+
+    .zc-meta {
+        font-size: .71rem;
+        color: var(--s400);
+        margin-bottom: .65rem;
+    }
+
+    .zc-btns {
+        display: flex;
+        gap: .4rem;
+    }
+
+    /* Leaflet popup */
+    .leaflet-popup-content-wrapper {
+        border-radius: .6rem !important;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, .15) !important;
+        padding: 0 !important;
+    }
+
+    .leaflet-popup-content {
+        margin: 0 !important;
+    }
+
+    .bin-pop {
+        min-width: 155px;
+        padding: .75rem .9rem;
+    }
+
+    .bin-pop h4 {
+        font-size: .84rem;
+        font-weight: 700;
+        color: var(--s800);
+        margin-bottom: .35rem;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .bin-pop p {
+        font-size: .72rem;
+        color: var(--s600);
+        margin: .12rem 0;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .lv-bar {
+        height: 7px;
+        background: var(--s100);
+        border-radius: 99px;
+        overflow: hidden;
+        margin: .35rem 0;
+    }
+
+    .lv-fill {
+        height: 100%;
+        border-radius: 99px;
+    }
+
+    /* section headings */
+    .sec-title {
+        font-size: 1.02rem;
+        font-weight: 700;
+        color: var(--s800);
+        margin-bottom: .85rem;
+    }
+</style>
+
+<div class="rm-page">
+
+    <!-- Page Header -->
+    <div class="page-hdr">
+        <div>
+            <h1>Route Management</h1>
+            <p>Real-time collection routes powered by live sensor data &amp; OSRM road routing</p>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fee2e2">&#128308;</div>
+            <div>
+                <div class="stat-lbl">Full Bins</div>
+                <div class="stat-val" id="stat-full">{{ full_bins }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fef3c7">&#128993;</div>
+            <div>
+                <div class="stat-lbl">Semi-Full</div>
+                <div class="stat-val" id="stat-semi">{{ semi_full_bins }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#dcfce7">&#128994;</div>
+            <div>
+                <div class="stat-lbl">Empty Bins</div>
+                <div class="stat-val" id="stat-empty">{{ empty_bins }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#e0e7ff">&#128295;</div>
+            <div>
+                <div class="stat-lbl">Maintenance</div>
+                <div class="stat-val" id="stat-maint">{{ under_maintenance }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="ctrl-row">
+        <label for="zoneSelect">Zone:</label>
+        <select id="zoneSelect" class="zone-sel">
+            <option value="">-- Select a zone --</option>
+            {% for zone in zones %}
+            <option value="{{ zone }}">{{ zone }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-primary" onclick="generateRoute('faster')">&#9889; Faster Route</button>
+        <button class="btn btn-green" onclick="generateRoute('low_co2')">&#127807; Lower CO2 Route</button>
+        <button class="btn" style="background:#7c3aed;color:#fff" onclick="generateBoth()">&#9654; Compare Both</button>
+        <button class="btn btn-outline" onclick="clearRoute()">&#10005; Clear</button>
+    </div>
+    <div style="font-size:.78rem;color:var(--s400);margin-bottom:1rem">
+        Both routes collect only <strong style="color:#ef4444">bins &ge; {{ fill_threshold }}% full</strong>.
+        <b style="color:#4f46e5">Faster</b> = OSRM optimises stop order for minimum time &nbsp;|&nbsp;
+        <b style="color:#059669">Lower CO2</b> = 2-opt minimises km driven &rarr; less fuel &rarr; less CO2
+    </div>
+
+    <!-- Comparison panel -->
+    <div id="compare-panel" style="display:none;gap:1rem;margin-bottom:1.1rem;" class="ctrl-row">
+        <div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:.6rem;padding:.6rem 1rem;flex:1">
+            <div style="font-size:.72rem;font-weight:700;color:#4f46e5;margin-bottom:.25rem">&#9889; FASTER ROUTE</div>
+            <div style="font-size:.82rem;color:#1e293b">Stops: <b id="cp-f-stops">-</b> &nbsp; Distance: <b
+                    id="cp-f-dist">-</b> km &nbsp; Time: <b id="cp-f-time">-</b> min</div>
+            <div style="font-size:.72rem;color:#64748b;margin-top:.2rem">OSRM /trip &mdash; time-optimal stop ordering
+            </div>
+        </div>
+        <div style="background:#f0fdf4;border:1px solid #a7f3d0;border-radius:.6rem;padding:.6rem 1rem;flex:1">
+            <div style="font-size:.72rem;font-weight:700;color:#059669;margin-bottom:.25rem">&#127807; LOWER CO2 ROUTE
+            </div>
+            <div style="font-size:.82rem;color:#1e293b">Stops: <b id="cp-c-stops">-</b> &nbsp; Distance: <b
+                    id="cp-c-dist">-</b> km &nbsp; Time: <b id="cp-c-time">-</b> min</div>
+            <div style="font-size:.72rem;color:#64748b;margin-top:.2rem">2-opt TSP &mdash; distance-minimised stop
+                ordering</div>
+        </div>
+        <div id="cp-diff"
+            style="background:#faf5ff;border:1px solid #ddd6fe;border-radius:.6rem;padding:.6rem 1rem;min-width:160px">
+            <div style="font-size:.72rem;font-weight:700;color:#7c3aed;margin-bottom:.25rem">&#9660; SAVED (CO2 vs
+                Faster)</div>
+            <div style="font-size:.82rem;color:#1e293b">Dist: <b id="cp-save-dist">-</b> km</div>
+            <div style="font-size:.82rem;color:#1e293b">Time: <b id="cp-save-time">-</b> min</div>
+        </div>
+    </div>
+
+    <!-- Single route info bar -->
+    <div class="rt-info" id="rt-info">
+        <div class="ri-item">Priority bins: <span class="ri-val" id="ri-stops">0</span></div>
+        <div class="ri-item">Distance: <span class="ri-val" id="ri-dist">-</span> km</div>
+        <div class="ri-item">Est. time: <span class="ri-val" id="ri-time">-</span> min</div>
+        <div class="ri-item">Algorithm: <span class="ri-val" id="ri-mode">-</span></div>
+        <span id="rt-badge" class="rt-badge" style="display:none"></span>
+    </div>
+
+    <!-- Map -->
+    <div class="map-sect">
+        <div class="map-topbar">
+            <div>
+                <h2>Routes Map Overview</h2>
+                <p>Click any basket marker to see details. Use buttons above to generate routes.</p>
+            </div>
+        </div>
+        <div class="map-wrap">
+            <div class="map-load" id="map-load">
+                <div class="spinner"></div>
+                <span>Fetching road route from OSRM...</span>
+            </div>
+            <div id="map"></div>
+        </div>
+        <div class="legend">
+            <div class="leg-item">
+                <div class="leg-dot" style="background:#ef4444"></div>&gt;80% Full
+            </div>
+            <div class="leg-item">
+                <div class="leg-dot" style="background:#f59e0b"></div>40-79%
+            </div>
+            <div class="leg-item">
+                <div class="leg-dot" style="background:#10b981"></div>&lt;40% Empty
+            </div>
+            <div class="leg-item">
+                <div class="leg-dot" style="background:#94a3b8"></div>Maintenance
+            </div>
+            <div class="leg-item">
+                <div class="leg-line" style="background:#4f46e5"></div>Faster route
+            </div>
+            <div class="leg-item">
+                <div class="leg-line" style="background:#10b981;border-top:2px dashed #10b981"></div>CO2 route
+            </div>
+        </div>
+    </div>
+
+    <!-- Zone Cards -->
+    <div class="sec-title">Zones Under Supervision</div>
+    <div class="zone-grid" id="zone-cards"></div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // ── Bootstrap data from Django ────────────────────────────────────────────
+    var ALL_STATIONS = {{ stations_json| safe }};
+
+    var ZONE_COLORS = {
+        "Downtown Circuit": "#ef4444",
+        "Tech Park Loop": "#3b82f6",
+        "University Campus": "#8b5cf6",
+        "Residential North": "#f59e0b",
+        "Industrial Zone": "#6366f1",
+        "Harbor District": "#10b981"
+    };
+
+    // ── Leaflet map ───────────────────────────────────────────────────────────
+    var map = L.map('map').setView([30.044, 31.235], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19
+    }).addTo(map);
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    var routeLayer = null;
+    var routeMarkers = [];
+    var allMarkers = [];
+
+    // ── Helper: bin fill colour ───────────────────────────────────────────────
+    function binColor(level, status) {
+        if (status === "Under Maintenance") return "#94a3b8";
+        if (level >= 80) return "#ef4444";
+        if (level >= 40) return "#f59e0b";
+        return "#10b981";
+    }
+
+    // ── Create a small dot icon ───────────────────────────────────────────────
+    function dotIcon(level, status) {
+        var c = binColor(level, status);
+        var sz = (level > 70 && status !== "Under Maintenance") ? 14 : 10;
+        return L.divIcon({
+            className: '',
+            html: '<div style="width:' + sz + 'px;height:' + sz + 'px;background:' + c + ';border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.25)"></div>',
+            iconSize: [sz, sz],
+            iconAnchor: [sz / 2, sz / 2]
+        });
+    }
+
+    // ── Popup HTML ────────────────────────────────────────────────────────────
+    function popupHtml(s) {
+        var c = binColor(s.level, s.status);
+        return '<div class="bin-pop">'
+            + '<h4>' + s.id + '</h4>'
+            + '<p><b>Zone:</b> ' + s.zone + '</p>'
+            + '<p><b>Type:</b> ' + s.type + '</p>'
+            + '<p><b>Status:</b> ' + s.status + '</p>'
+            + '<p><b>Fill:</b> ' + s.level + '%</p>'
+            + '<div class="lv-bar"><div class="lv-fill" style="width:' + s.level + '%;background:' + c + '"></div></div>'
+            + '</div>';
+    }
+
+    // ── Draw all station markers ──────────────────────────────────────────────
+    ALL_STATIONS.forEach(function (s) {
+        var m = L.marker([s.lat, s.lng], { icon: dotIcon(s.level, s.status) })
+            .bindPopup(popupHtml(s))
+            .addTo(map);
+        allMarkers.push(m);
+    });
+
+    // ── Zone summary cards ────────────────────────────────────────────────────
+    function buildZoneCards() {
+        var zones = {};
+        ALL_STATIONS.forEach(function (s) {
+            if (!zones[s.zone]) zones[s.zone] = [];
+            zones[s.zone].push(s);
+        });
+
+        var container = document.getElementById('zone-cards');
+        container.innerHTML = '';
+
+        Object.keys(zones).forEach(function (zoneName) {
+            var stats = zones[zoneName];
+            var total = stats.length;
+            var full = stats.filter(function (s) { return s.level >= 80; }).length;
+            var semi = stats.filter(function (s) { return s.level >= 40 && s.level < 80; }).length;
+            var empty = stats.filter(function (s) { return s.level < 40; }).length;
+            var avg = Math.round(stats.reduce(function (a, s) { return a + s.level; }, 0) / total);
+            var col = ZONE_COLORS[zoneName] || "#6366f1";
+            var bar = avg > 70 ? "#ef4444" : avg > 40 ? "#f59e0b" : "#10b981";
+
+            var card = document.createElement('div');
+            card.className = 'z-card';
+            card.dataset.zone = zoneName;
+            card.innerHTML =
+                '<div class="zc-hdr">'
+                + '<div class="zc-dot" style="background:' + col + '"></div>'
+                + '<span class="zc-name">' + zoneName + '</span>'
+                + '</div>'
+                + '<div class="zc-stats">'
+                + '<div class="zcs"><span>Full</span><strong style="color:#ef4444">' + full + '</strong></div>'
+                + '<div class="zcs"><span>Semi</span><strong style="color:#f59e0b">' + semi + '</strong></div>'
+                + '<div class="zcs"><span>Empty</span><strong style="color:#10b981">' + empty + '</strong></div>'
+                + '</div>'
+                + '<div class="zc-bar"><div class="zc-fill" style="width:' + avg + '%;background:' + bar + '"></div></div>'
+                + '<div class="zc-meta">' + total + ' baskets &middot; avg ' + avg + '% full</div>'
+                + '<div class="zc-btns">'
+                + '<button class="btn btn-primary btn-xs" onclick="cardRoute(\'' + zoneName + '\',\'faster\')">&#9889; Faster</button>'
+                + '<button class="btn btn-green btn-xs" onclick="cardRoute(\'' + zoneName + '\',\'low_co2\')">&#127807; CO2</button>'
+                + '</div>';
+            container.appendChild(card);
+        });
+    }
+    buildZoneCards();
+
+    // ── Route actions ─────────────────────────────────────────────────────────
+    function cardRoute(zone, type) {
+        document.getElementById('zoneSelect').value = zone;
+        fetchRoute(zone, type);
+    }
+
+    function generateRoute(type) {
+        var zone = document.getElementById('zoneSelect').value;
+        if (!zone) { alert('Please select a zone first.'); return; }
+        clearRoute();
+        fetchRoute(zone, type, true);   // single route mode
+    }
+
+    function cardRoute(zone, type) {
+        document.getElementById('zoneSelect').value = zone;
+        clearRoute();
+        fetchRoute(zone, type, true);
+    }
+
+    async function generateBoth() {
+        var zone = document.getElementById('zoneSelect').value;
+        if (!zone) { alert('Please select a zone first.'); return; }
+        clearRoute();
+        setLoading(true);
+
+        try {
+            // Fetch both routes in parallel
+            var [resF, resC] = await Promise.all([
+                fetch('/routing/api/optimized-route/?zone=' + encodeURIComponent(zone) + '&type=faster'),
+                fetch('/routing/api/optimized-route/?zone=' + encodeURIComponent(zone) + '&type=low_co2')
+            ]);
+            var [dataF, dataC] = await Promise.all([resF.json(), resC.json()]);
+
+            if (dataF.error || dataC.error) { alert(dataF.error || dataC.error); return; }
+
+            var bounds = L.latLngBounds([]);
+
+            // Draw FASTER route — thick solid indigo line
+            if (dataF.geometry && dataF.geometry.length > 1) {
+                var layerF = L.polyline(dataF.geometry, {
+                    color: '#4f46e5', weight: 6, opacity: 0.85, lineJoin: 'round'
+                }).addTo(map);
+                routeLayer = layerF;   // store as primary for clearRoute
+                bounds.extend(layerF.getBounds());
+            }
+
+            // Draw CO2 route — thinner dashed green line (on top)
+            if (dataC.geometry && dataC.geometry.length > 1) {
+                var layerC = L.polyline(dataC.geometry, {
+                    color: '#10b981', weight: 4, opacity: 0.9,
+                    dashArray: '10 6', lineJoin: 'round'
+                }).addTo(map);
+                routeMarkers.push({ _isLayer: true, _layer: layerC });  // hack: store for clearRoute
+                bounds.extend(layerC.getBounds());
+            }
+
+            if (bounds.isValid()) map.fitBounds(bounds, { padding: [40, 40] });
+
+            // Plot FASTER waypoints (indigo circles)
+            drawWaypoints(dataF.waypoints || [], '#4f46e5', 'F');
+            // Plot CO2 waypoints (green triangles / circles)
+            drawWaypoints(dataC.waypoints || [], '#10b981', 'C');
+
+            // Update comparison panel
+            document.getElementById('cp-f-stops').textContent = (dataF.waypoints || []).length;
+            document.getElementById('cp-f-dist').textContent = dataF.distance_km;
+            document.getElementById('cp-f-time').textContent = dataF.duration_min;
+            document.getElementById('cp-c-stops').textContent = (dataC.waypoints || []).length;
+            document.getElementById('cp-c-dist').textContent = dataC.distance_km;
+            document.getElementById('cp-c-time').textContent = dataC.duration_min;
+
+            var distSaved = Math.round((dataF.distance_km - dataC.distance_km) * 100) / 100;
+            var timeSaved = Math.round((dataF.duration_min - dataC.duration_min) * 10) / 10;
+            document.getElementById('cp-save-dist').textContent = distSaved > 0 ? '-' + distSaved : '+' + Math.abs(distSaved);
+            document.getElementById('cp-save-time').textContent = timeSaved > 0 ? '-' + timeSaved : '+' + Math.abs(timeSaved);
+
+            document.getElementById('compare-panel').style.display = 'flex';
+            document.getElementById('rt-info').classList.remove('show');
+
+            document.querySelectorAll('.z-card').forEach(function (c) {
+                c.classList.toggle('active', c.dataset.zone === zone);
+            });
+
+        } catch (err) {
+            console.error(err);
+            alert('Failed to fetch routes.');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    function drawWaypoints(waypoints, color, prefix) {
+        waypoints.forEach(function (p, i) {
+            var c = color;
+            var icon = L.divIcon({
+                className: '',
+                html: '<div style="width:24px;height:24px;border-radius:50%;background:' + c + ';'
+                    + 'border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25);'
+                    + 'display:flex;align-items:center;justify-content:center;'
+                    + 'font-size:8px;font-weight:800;color:#fff;font-family:Inter,sans-serif">'
+                    + prefix + (i + 1) + '</div>',
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+            var m = L.marker([p.lat, p.lng], { icon: icon, zIndexOffset: 200 }).addTo(map);
+            m.bindPopup(
+                '<div class="bin-pop"><h4>Stop ' + prefix + (i + 1) + ': ' + p.id + '</h4>'
+                + '<p><b>Fill:</b> ' + p.level + '%</p>'
+                + '<p><b>Type:</b> ' + (p.type || '-') + '</p>'
+                + '<div class="lv-bar"><div class="lv-fill" style="width:' + p.level + '%;background:' + binColor(p.level, 'Active') + '"></div></div>'
+                + '</div>'
+            );
+            routeMarkers.push(m);
+        });
+    }
+
+    function clearRoute() {
+        if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
+        routeMarkers.forEach(function (m) {
+            if (m._isLayer) { map.removeLayer(m._layer); }
+            else { map.removeLayer(m); }
+        });
+        routeMarkers = [];
+        document.getElementById('rt-info').classList.remove('show');
+        document.getElementById('compare-panel').style.display = 'none';
+        document.getElementById('rt-badge').style.display = 'none';
+        document.querySelectorAll('.z-card').forEach(function (c) { c.classList.remove('active'); });
+    }
+
+    function setLoading(on) {
+        document.getElementById('map-load').style.display = on ? 'flex' : 'none';
+    }
+
+    async function fetchRoute(zone, type, single) {
+        setLoading(true);
+        try {
+            var url = '/routing/api/optimized-route/?zone=' + encodeURIComponent(zone) + '&type=' + type;
+            var res = await fetch(url);
+            var data = await res.json();
+
+            if (data.error) { alert(data.error); return; }
+            if (!data.waypoints || data.waypoints.length === 0) {
+                alert(data.message || 'No priority bins found in this zone.');
+                return;
+            }
+
+            var col = type === 'faster' ? '#4f46e5' : '#10b981';
+            var dash = type === 'low_co2' ? '10 6' : null;
+            var wt = type === 'faster' ? 6 : 4;
+
+            if (data.geometry && data.geometry.length > 1) {
+                routeLayer = L.polyline(data.geometry, {
+                    color: col, weight: wt, opacity: 0.88, dashArray: dash, lineJoin: 'round'
+                }).addTo(map);
+                map.fitBounds(routeLayer.getBounds(), { padding: [40, 40] });
+            }
+
+            drawWaypoints(data.waypoints, col, type === 'faster' ? 'F' : 'C');
+
+            // Info bar
+            document.getElementById('ri-stops').textContent = data.waypoints.length;
+            document.getElementById('ri-dist').textContent = data.distance_km;
+            document.getElementById('ri-time').textContent = data.duration_min;
+            var modeEl = document.getElementById('ri-mode');
+            if (type === 'faster') {
+                modeEl.textContent = 'OSRM /trip — time-optimal';
+                modeEl.style.color = '#4f46e5';
+            } else {
+                modeEl.textContent = '2-opt distance-minimised';
+                modeEl.style.color = '#059669';
+            }
+            document.getElementById('rt-info').classList.add('show');
+            document.getElementById('compare-panel').style.display = 'none';
+
+            // Source badge
+            var badge = document.getElementById('rt-badge');
+            badge.style.display = 'inline-flex';
+            badge.className = data.source === 'osrm' ? 'rt-badge badge-osrm' : 'rt-badge badge-fb';
+            badge.textContent = data.source === 'osrm' ? 'OSRM Road Routing' : 'Straight-line fallback';
+
+            document.querySelectorAll('.z-card').forEach(function (c) {
+                c.classList.toggle('active', c.dataset.zone === zone);
+            });
+
+        } catch (err) {
+            console.error(err);
+            alert('Failed to generate route. Is Django running?');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    // ── Live refresh stats every 60 s ─────────────────────────────────────────
+    setInterval(async function () {
+        try {
+            var res = await fetch('/routing/api/stations/');
+            var data = await res.json();
+            if (!data.stations) return;
+            var s = data.stations;
+            document.getElementById('stat-full').textContent = s.filter(function (x) { return x.level >= 80; }).length;
+            document.getElementById('stat-semi').textContent = s.filter(function (x) { return x.level >= 40 && x.level < 80; }).length;
+            document.getElementById('stat-empty').textContent = s.filter(function (x) { return x.level < 40; }).length;
+            document.getElementById('stat-maint').textContent = s.filter(function (x) { return x.status === 'Under Maintenance'; }).length;
+        } catch (e) { }
+    }, 60000);
+</script>
+{% endblock %}

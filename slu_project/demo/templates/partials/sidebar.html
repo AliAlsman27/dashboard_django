@@ -8,8 +8,11 @@
   </div>
 
   <nav class="flex-1 px-4 py-6 space-y-2 text-sm font-medium">
-    <a href="#" class="block px-4 py-2 rounded-lg bg-slate-100 text-blue-600">
+    <a href="{% url 'demo:dashboard' %}" class="block px-4 py-2 rounded-lg transition-colors {% if request.resolver_match.app_name == 'demo' %}bg-slate-100 text-blue-600 font-semibold{% else %}hover:bg-slate-50{% endif %}">
       Devices
+    </a>
+    <a href="{% url 'Routing:route_management' %}" class="block px-4 py-2 rounded-lg transition-colors {% if request.resolver_match.app_name == 'Routing' %}bg-slate-100 text-blue-600 font-semibold{% else %}hover:bg-slate-50{% endif %}">
+      Routing
     </a>
     <a href="#" class="block px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors">
       Analytics
